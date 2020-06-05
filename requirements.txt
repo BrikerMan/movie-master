@@ -1,0 +1,4 @@
+requests
+scrapy
+fastapi
+uvicorn
