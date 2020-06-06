@@ -2,3 +2,4 @@ requests
 scrapy
 fastapi
 uvicorn
+jina==0.2.1
