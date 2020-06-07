@@ -25,7 +25,7 @@ class DataReader:
         movie_files = movie_files[:count]
         for movie_path in movie_files:
             item = json.load(open(movie_path, 'r'))
-            text = f"{item['id']}: {item['title']} "
+            text = f"{item['id']}: {item['title']} | "
             text += ' | '.join([genre['name'] for genre in item['genres']])
             text += f" || {item['overview']}"
             yield text.lower().encode('utf8')

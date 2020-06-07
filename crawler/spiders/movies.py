@@ -61,7 +61,7 @@ class PopularMovies:
         sorted_movies = sorted(movies, key=itemgetter('popularity'), reverse=True)
         return sorted_movies[:top_k]
 
-    def get_top_ids(self, top_k: int = 10000) -> List[int]:
+    def get_top_ids(self, top_k: int = 50000) -> List[int]:
         full_file_path = self.get_daily_file_path()
         top_movies = self.get_top_k_movies(full_file_path, top_k=top_k)
         new_top_movies = []

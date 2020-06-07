@@ -1,5 +1,9 @@
+click
 requests
 scrapy
 fastapi
 uvicorn
-jina==0.2.1
+jina[scipy]==0.2.1
+torch
+transformers
+tensorflow==2.2.0
