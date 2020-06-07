@@ -1,26 +1,32 @@
-__copyright__ = "Copyright (c) 2020 Jina AI Limited. All rights reserved."
-__license__ = "Apache-2.0"
+# encoding: utf-8
+
+# author: BrikerMan
+# contact: eliyar917@gmail.com
+# blog: https://eliyar.biz
+
+# file: jina_app.py
+# time: 10:00 上午
 
 import glob
 import json
 import os
-import random
-import string
 
 import click
 from jina.flow import Flow
 
 from config import conf
 
-RANDOM_SEED = 10  # 5
-os.environ['REPLICAS'] = str(1)
-os.environ['SHARDS'] = str(1)
-os.environ['TMP_WORKSPACE'] = os.path.join(conf.DATA_DIR, 'workdir')
+
+def read_query_data(text):
+    yield '{}'.format(text).encode('utf8')
 
 
-class DataReader:
-    @classmethod
-    def read(cls, count: int):
+class JinaApp:
+    def __init__(self, workspace: str):
+        self.workspace = workspace
+        os.environ['TMP_WORKSPACE'] = workspace
+
+    def read_data(self, count: int):
         movie_files = glob.glob(os.path.join(conf.MOVIE_DIR, '*.json'))
         movie_files = movie_files[:count]
         for movie_path in movie_files:
@@ -30,44 +36,63 @@ class DataReader:
             text += f" || {item['overview']}"
             yield text.lower().encode('utf8')
 
+    def print_top_k(self, resp, query: str):
+        for d in resp.search.docs:
+            print(f'Ta-Dah🔮, here are what we found for: {query}')
+            for idx, kk in enumerate(d.topk_results):
+                score = kk.score.value
+                if score <= 0.0:
+                    continue
+                text = kk.match_doc.buffer.decode()
+                movie_id = text.split(': ')[0]
+                movie_name = text.split(': ')[1].split(' | ')[0]
+                movie_summary = text.split('|| ')[1]
+                print(f"Score   : {score}")
+                print(f"Movie   : {movie_id} - {movie_name}")
+                print(f"URL     : https://www.themoviedb.org/movie/{movie_id}")
+                print(f"Summary : {movie_summary}")
+                print('-' * 70)
+                print()
 
-def print_topk(resp, word):
-    for d in resp.search.docs:
-        print(f'Ta-Dah🔮, here are what we found for: {word}')
-        for idx, kk in enumerate(d.topk_results):
-            score = kk.score.value
-            if score <= 0.0:
-                continue
-            print('{:>2d}:({:f}):{}'.format(
-                idx, score, kk.match_doc.buffer.decode()))
+    def index(self, num_docs: int):
+        print(f'Start Index with {num_docs} docs')
+        flow = Flow().load_config('flow-index.yml')
+        with flow.build() as fl:
+            fl.index(buffer=self.read_data(num_docs), batch_size=16)
 
-
-def read_query_data(text):
-    yield '{}'.format(text).encode('utf8')
+    def query(self, top_k: int):
+        flow = Flow().load_config('flow-query.yml')
+        with flow.build() as fl:
+            while True:
+                text = input('movie plot: ')
+                if not text:
+                    break
+                text = text.replace('movie plot: ', '').lower()
+                ppr = lambda x: self.print_top_k(x, text)
+                fl.search(read_query_data(text), output_fn=ppr, topk=top_k)
 
 
 @click.command()
 @click.option('--task', '-t')
+@click.option('--workspace', '-ws', default=None)
 @click.option('--num_docs', '-n', default=50)
 @click.option('--top_k', '-k', default=5)
-def main(task, num_docs, top_k):
+def main(task: str, workspace: str, num_docs: int, top_k: int):
+    os.environ['REPLICAS'] = str(1)
+    os.environ['SHARDS'] = str(1)
+
+    if workspace is None:
+        workspace = os.path.join(conf.DATA_DIR, 'workspace')
+
+    j = JinaApp(workspace)
     if task == 'index':
-        flow = Flow().load_config('flow-index.yml')
-        with flow.build() as fl:
-            fl.index(buffer=DataReader.read(num_docs), batch_size=16)
+        j.index(num_docs)
     elif task == 'query':
-        flow = Flow().load_config('flow-query.yml')
-        with flow.build() as fl:
-            while True:
-                text = input('word definition: ')
-                if not text:
-                    break
-                ppr = lambda x: print_topk(x, text)
-                fl.search(read_query_data(text), callback=ppr, topk=top_k)
+        j.query(top_k)
     else:
         raise NotImplementedError(
             f'unknown task: {task}. A valid task is either `index` or `query`.')
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
