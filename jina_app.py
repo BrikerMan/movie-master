@@ -54,11 +54,10 @@ class JinaApp:
                 print('-' * 70)
                 print()
 
-    def index(self, num_docs: int):
-        print(f'Start Index with {num_docs} docs')
+    def index(self, num_docs: int, batch_size: int):
         flow = Flow().load_config('flow-index.yml')
         with flow.build() as fl:
-            fl.index(buffer=self.read_data(num_docs), batch_size=16)
+            fl.index(buffer=self.read_data(num_docs), batch_size=batch_size)
 
     def query(self, top_k: int):
         flow = Flow().load_config('flow-query.yml')
@@ -77,7 +76,8 @@ class JinaApp:
 @click.option('--workspace', '-ws', default=None)
 @click.option('--num_docs', '-n', default=50)
 @click.option('--top_k', '-k', default=5)
-def main(task: str, workspace: str, num_docs: int, top_k: int):
+@click.option('--batch_size', default=32)
+def main(task: str, workspace: str, num_docs: int, top_k: int, batch_size: int):
     os.environ['REPLICAS'] = str(1)
     os.environ['SHARDS'] = str(1)
 
@@ -86,7 +86,7 @@ def main(task: str, workspace: str, num_docs: int, top_k: int):
 
     j = JinaApp(workspace)
     if task == 'index':
-        j.index(num_docs)
+        j.index(num_docs, batch_size=batch_size)
     elif task == 'query':
         j.query(top_k)
     else:
