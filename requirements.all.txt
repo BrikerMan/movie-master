@@ -28,7 +28,7 @@ incremental==17.5.0
 jina==0.2.1
 joblib==0.15.1
 Keras-Preprocessing==1.1.2
-lxml==4.5.1
+lxml==4.6.3
 Markdown==3.2.2
 numpy==1.18.5
 oauthlib==3.1.0
