@@ -55,7 +55,7 @@ ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 sacremoses==0.0.43
 scipy==1.4.1
-Scrapy==2.1.0
+Scrapy==2.5.1
 sentencepiece==0.1.91
 service-identity==18.1.0
 six==1.15.0
